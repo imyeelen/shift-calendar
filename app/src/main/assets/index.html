@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>班次日历</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --primary: #3563e9;
+      --day: #eaf2ff;
+      --day-text: #2457c5;
+      --night: #ece9ff;
+      --night-text: #5a45bd;
+      --rest: #e8f7ee;
+      --rest-text: #21834a;
+      --danger: #b42318;
+      --shadow: 0 12px 35px rgba(31, 41, 55, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #eef3ff 0%, var(--bg) 42%);
+      color: var(--text);
+      padding: 24px 14px 40px;
+    }
+
+    .app {
+      width: min(760px, 100%);
+      margin: 0 auto;
+    }
+
+    .hero {
+      margin-bottom: 16px;
+    }
+
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: clamp(26px, 5vw, 38px);
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid rgba(229, 231, 235, 0.85);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 7px;
+      font-weight: 600;
+    }
+
+    input, select, button {
+      width: 100%;
+      min-height: 44px;
+      border-radius: 12px;
+      font: inherit;
+    }
+
+    input, select {
+      border: 1px solid var(--line);
+      padding: 0 12px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.12);
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      padding: 0 18px;
+      font-weight: 700;
+      transition: transform .15s ease, opacity .15s ease;
+    }
+
+    button:active { transform: scale(.98); }
+
+    .primary {
+      background: var(--primary);
+      color: #fff;
+      min-width: 110px;
+    }
+
+    .ghost {
+      width: auto;
+      background: #f3f4f6;
+      color: var(--text);
+      min-height: 38px;
+      padding: 0 14px;
+    }
+
+    .month-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .month-title {
+      text-align: center;
+      flex: 1;
+    }
+
+    .month-title strong {
+      display: block;
+      font-size: 21px;
+    }
+
+    .month-title span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .nav-btn {
+      width: 42px;
+      min-width: 42px;
+      padding: 0;
+      background: #f3f4f6;
+      color: var(--text);
+      font-size: 20px;
+    }
+
+    .weekdays, .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    .weekdays div {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 4px 0 8px;
+      font-weight: 700;
+    }
+
+    .day-cell {
+      position: relative;
+      min-height: 88px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 9px 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .day-cell.empty {
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .day-cell.before-reference {
+      opacity: .46;
+      background: #fafafa;
+    }
+
+    .day-cell.reference {
+      outline: 2px solid var(--primary);
+      outline-offset: 1px;
+    }
+
+    .day-cell.today::after {
+      content: "今";
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #111827;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .date-num {
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 9px;
+    }
+
+    .shift-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+      height: 27px;
+      padding: 0 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .shift-day {
+      background: var(--day);
+      color: var(--day-text);
+    }
+
+    .shift-night {
+      background: var(--night);
+      color: var(--night-text);
+    }
+
+    .shift-rest {
+      background: var(--rest);
+      color: var(--rest-text);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .summary-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      background: #fafbff;
+    }
+
+    .summary-card b {
+      display: block;
+      font-size: 22px;
+      margin-top: 3px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      align-items: center;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .dot.day { background: var(--day-text); }
+    .dot.night { background: var(--night-text); }
+    .dot.rest { background: var(--rest-text); }
+
+    .notice {
+      margin-top: 10px;
+      min-height: 20px;
+      color: var(--danger);
+      font-size: 13px;
+    }
+
+
+
+    /* 字体大小与老花眼友好设置 */
+    body[data-font-size="small"] { font-size: 15px; }
+    body[data-font-size="medium"] { font-size: 17px; }
+    body[data-font-size="large"] { font-size: 20px; }
+    body[data-font-size="xlarge"] { font-size: 23px; }
+
+    body[data-font-size] .hero h1 { font-size: 2.1em; }
+    body[data-font-size] .hero p { font-size: .95em; }
+    body[data-font-size] label { font-size: .9em; }
+    body[data-font-size] .month-title strong { font-size: 1.35em; }
+    body[data-font-size] .month-title span { font-size: .85em; }
+    body[data-font-size] .weekdays div { font-size: .82em; }
+    body[data-font-size] .date-num { font-size: 1em; }
+    body[data-font-size] .shift-badge { font-size: .82em; height: 2.1em; min-width: 4.2em; }
+    body[data-font-size] .summary-card b { font-size: 1.45em; }
+    body[data-font-size] .legend { font-size: .82em; }
+    body[data-font-size] .notice { font-size: .9em; }
+
+    body[data-font-size="large"] .day-cell { min-height: 98px; }
+    body[data-font-size="xlarge"] .day-cell { min-height: 112px; }
+
+    .accessibility-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 14px;
+      margin-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .accessibility-title {
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .font-size-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(58px, 1fr));
+      gap: 8px;
+      flex: 1;
+      max-width: 420px;
+    }
+
+    .font-size-btn {
+      min-height: 42px;
+      background: #f3f4f6;
+      color: var(--text);
+      border: 1px solid var(--line);
+      padding: 0 10px;
+    }
+
+    .font-size-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.12);
+    }
+
+    @media (max-width: 620px) {
+      body { padding: 16px 10px 28px; }
+      .panel { padding: 14px; border-radius: 16px; }
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .accessibility-row {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .font-size-buttons {
+        width: 100%;
+        max-width: none;
+        grid-template-columns: repeat(2, 1fr);
+      }
+      body[data-font-size="large"] .day-cell { min-height: 86px; }
+      body[data-font-size="xlarge"] .day-cell { min-height: 98px; }
+
+      .primary {
+        grid-column: 1 / -1;
+      }
+      .weekdays, .calendar { gap: 5px; }
+      .day-cell {
+        min-height: 72px;
+        padding: 7px 5px;
+        border-radius: 11px;
+      }
+      .date-num { margin-bottom: 7px; }
+      .shift-badge {
+        min-width: 42px;
+        height: 24px;
+        padding: 0 6px;
+        font-size: 11px;
+      }
+      .day-cell.today::after {
+        top: 5px;
+        right: 5px;
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <h1>班次日历</h1>
+      <p>选择任意一天并填写当天班次，系统会按照“白班 → 夜班 → 休班”循环，自动计算该月班次。</p>
+    </section>
+
+    <section class="panel">
+      <div class="form-grid">
+        <div>
+          <label for="startDate">基准日期</label>
+          <input id="startDate" type="date" />
+        </div>
+        <div>
+          <label for="startShift">当天班次</label>
+          <select id="startShift">
+            <option value="白班">白班</option>
+            <option value="夜班">夜班</option>
+            <option value="休班">休班</option>
+          </select>
+        </div>
+        <button class="primary" id="generateBtn">生成班次</button>
+      </div>
+      <div class="notice" id="notice"></div>
+
+      <div class="accessibility-row">
+        <div class="accessibility-title">字体大小</div>
+        <div class="font-size-buttons" role="group" aria-label="选择字体大小">
+          <button type="button" class="font-size-btn" data-font-size="small">小</button>
+          <button type="button" class="font-size-btn" data-font-size="medium">中</button>
+          <button type="button" class="font-size-btn" data-font-size="large">大</button>
+          <button type="button" class="font-size-btn" data-font-size="xlarge">特大</button>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="panel">
+      <div class="month-bar">
+        <button class="nav-btn" id="prevMonth" aria-label="上个月">‹</button>
+        <div class="month-title">
+          <strong id="monthTitle"></strong>
+          <span id="referenceText"></span>
+        </div>
+        <button class="nav-btn" id="nextMonth" aria-label="下个月">›</button>
+      </div>
+
+      <div class="weekdays">
+        <div>一</div><div>二</div><div>三</div><div>四</div>
+        <div>五</div><div>六</div><div>日</div>
+      </div>
+      <div class="calendar" id="calendar"></div>
+
+      <div class="summary">
+        <div class="summary-card">白班<b id="dayCount">0</b></div>
+        <div class="summary-card">夜班<b id="nightCount">0</b></div>
+        <div class="summary-card">休班<b id="restCount">0</b></div>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><i class="dot day"></i>白班</span>
+        <span class="legend-item"><i class="dot night"></i>夜班</span>
+        <span class="legend-item"><i class="dot rest"></i>休班</span>
+        <button class="ghost" id="backToReference">返回基准月</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const shiftOrder = ["白班", "夜班", "休班"];
+    const startDateInput = document.getElementById("startDate");
+    const startShiftSelect = document.getElementById("startShift");
+    const calendarEl = document.getElementById("calendar");
+    const monthTitleEl = document.getElementById("monthTitle");
+    const referenceTextEl = document.getElementById("referenceText");
+    const noticeEl = document.getElementById("notice");
+
+    let referenceDate = null;
+    let referenceShift = "白班";
+    let viewingDate = new Date();
+    let fontSize = "medium";
+
+
+
+    function applyFontSize(size) {
+      const allowed = ["small", "medium", "large", "xlarge"];
+      fontSize = allowed.includes(size) ? size : "medium";
+      document.body.dataset.fontSize = fontSize;
+      document.querySelectorAll(".font-size-btn").forEach(btn => {
+        const active = btn.dataset.fontSize === fontSize;
+        btn.classList.toggle("active", active);
+        btn.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+    }
+
+    function formatInputDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function parseLocalDate(value) {
+      if (!value) return null;
+      const [y, m, d] = value.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function atMidnight(date) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+
+    function daysBetween(a, b) {
+      const oneDay = 24 * 60 * 60 * 1000;
+      return Math.round((atMidnight(a) - atMidnight(b)) / oneDay);
+    }
+
+    function getShiftForDate(date) {
+      const baseIndex = shiftOrder.indexOf(referenceShift);
+      const diff = daysBetween(date, referenceDate);
+      const index = ((baseIndex + diff) % shiftOrder.length + shiftOrder.length) % shiftOrder.length;
+      return shiftOrder[index];
+    }
+
+    function getShiftClass(shift) {
+      if (shift === "白班") return "shift-day";
+      if (shift === "夜班") return "shift-night";
+      return "shift-rest";
+    }
+
+    function sameDate(a, b) {
+      return a &&
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+    }
+
+    function renderCalendar() {
+      if (!referenceDate) return;
+
+      calendarEl.innerHTML = "";
+      noticeEl.textContent = "";
+
+      const year = viewingDate.getFullYear();
+      const month = viewingDate.getMonth();
+      monthTitleEl.textContent = `${year}年${month + 1}月`;
+      referenceTextEl.textContent =
+        `基准：${referenceDate.getFullYear()}年${referenceDate.getMonth() + 1}月${referenceDate.getDate()}日 · ${referenceShift}`;
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const mondayBasedOffset = (firstDay.getDay() + 6) % 7;
+      const today = new Date();
+
+      let counts = { 白班: 0, 夜班: 0, 休班: 0 };
+
+      for (let i = 0; i < mondayBasedOffset; i++) {
+        const empty = document.createElement("div");
+        empty.className = "day-cell empty";
+        calendarEl.appendChild(empty);
+      }
+
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(year, month, day);
+        const shift = getShiftForDate(date);
+        const cell = document.createElement("div");
+        cell.className = "day-cell";
+
+        if (date < referenceDate) cell.classList.add("before-reference");
+        if (sameDate(date, referenceDate)) cell.classList.add("reference");
+        if (sameDate(date, today)) cell.classList.add("today");
+
+        const dateNum = document.createElement("div");
+        dateNum.className = "date-num";
+        dateNum.textContent = day;
+
+        const badge = document.createElement("span");
+        badge.className = `shift-badge ${getShiftClass(shift)}`;
+        badge.textContent = shift;
+
+        cell.appendChild(dateNum);
+        cell.appendChild(badge);
+        calendarEl.appendChild(cell);
+
+        // 只统计基准日期起的“剩余班次”
+        if (date >= referenceDate) counts[shift]++;
+      }
+
+      document.getElementById("dayCount").textContent = counts["白班"];
+      document.getElementById("nightCount").textContent = counts["夜班"];
+      document.getElementById("restCount").textContent = counts["休班"];
+    }
+
+    function saveSettings() {
+      localStorage.setItem("shiftCalendarSettings", JSON.stringify({
+        referenceDate: formatInputDate(referenceDate),
+        referenceShift,
+        fontSize
+      }));
+    }
+
+    function generate() {
+      const selectedDate = parseLocalDate(startDateInput.value);
+      if (!selectedDate) {
+        noticeEl.textContent = "请先选择一个基准日期。";
+        return;
+      }
+      referenceDate = selectedDate;
+      referenceShift = startShiftSelect.value;
+      viewingDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+      saveSettings();
+      renderCalendar();
+    }
+
+    document.getElementById("generateBtn").addEventListener("click", generate);
+
+    document.querySelectorAll(".font-size-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        applyFontSize(btn.dataset.fontSize);
+        saveSettings();
+      });
+    });
+
+
+    document.getElementById("prevMonth").addEventListener("click", () => {
+      viewingDate = new Date(viewingDate.getFullYear(), viewingDate.getMonth() - 1, 1);
+      renderCalendar();
+    });
+
+    document.getElementById("nextMonth").addEventListener("click", () => {
+      viewingDate = new Date(viewingDate.getFullYear(), viewingDate.getMonth() + 1, 1);
+      renderCalendar();
+    });
+
+    document.getElementById("backToReference").addEventListener("click", () => {
+      viewingDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+      renderCalendar();
+    });
+
+    // 初始化：优先读取上次设置，否则使用今天和白班
+    const saved = localStorage.getItem("shiftCalendarSettings");
+    if (saved) {
+      try {
+        const settings = JSON.parse(saved);
+        referenceDate = parseLocalDate(settings.referenceDate);
+        referenceShift = shiftOrder.includes(settings.referenceShift) ? settings.referenceShift : "白班";
+        fontSize = ["small", "medium", "large", "xlarge"].includes(settings.fontSize) ? settings.fontSize : "medium";
+      } catch (e) {
+        referenceDate = new Date();
+        referenceShift = "白班";
+      }
+    } else {
+      referenceDate = new Date();
+      referenceShift = "白班";
+      fontSize = "medium";
+    }
+
+    applyFontSize(fontSize);
+    startDateInput.value = formatInputDate(referenceDate);
+    startShiftSelect.value = referenceShift;
+    viewingDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+    renderCalendar();
+  </script>
+</body>
+</html>
