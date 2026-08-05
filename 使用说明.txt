@@ -1,0 +1,30 @@
+班次日历安卓工程说明
+
+这是“真正的安卓应用工程”，应用启动后不会打开 Chrome、Edge 等浏览器，也不需要上传网站。
+日历网页已放入 APK 内部，可离线使用；班次和字体设置保存在手机本机。
+
+【最省事：通过 GitHub 自动生成 APK】
+1. 在 GitHub 新建一个空仓库。
+2. 把本工程内的所有文件和文件夹上传到仓库根目录。
+   注意：需要连同隐藏的“.github”文件夹一起上传。
+3. 打开仓库的 Actions 页面。
+4. 点击“生成安卓APK”工作流，再点击 Run workflow。
+5. 等待构建完成，打开此次运行记录。
+6. 在页面下方 Artifacts 区域下载“班次日历-APK”。
+7. 解压下载的文件，里面的 app-debug.apk 可直接传到安卓手机安装。
+
+【通过 Android Studio 生成】
+1. 安装并打开 Android Studio。
+2. 选择 Open，打开本工程文件夹。
+3. 等待 Gradle 和 Android SDK 下载、同步完成。
+4. 菜单选择 Build → Build Bundle(s) / APK(s) → Build APK(s)。
+5. 生成位置：app/build/outputs/apk/debug/app-debug.apk
+
+【手机安装】
+将 app-debug.apk 发送到安卓手机并点击安装。
+首次从浏览器、微信或文件管理安装时，系统可能要求允许“安装未知应用”。
+
+说明：
+- debug APK 已由构建系统自动签名，可以直接安装测试和日常自用。
+- 如需发布到应用商店，应生成并妥善保存自己的 release 签名密钥。
+- 本应用不申请联网权限，所有功能可离线运行。
